@@ -111,25 +111,10 @@ RUN mkdir -p eccodes/src \
 	&& make install \
 	&& ldconfig
 
-# Build Magics
-ARG MAGICS_INSTALL_PREFIX=/usr/local
-ARG MAGICS_VERSION=4.2.3
-RUN mkdir -p magics/src \
-	&& wget https://confluence.ecmwf.int/download/attachments/3473464/Magics-${MAGICS_VERSION}-Source.tar.gz?api=v2 -O - \
-        | tar xz -C /magics/src --strip-components=1
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing --no-install-recommends libboost-all-dev libnetcdf-c++4 libnetcdf-cxx-legacy-dev
-RUN /databricks/conda/envs/dcs-minimal/bin/pip install jinja2 netcdf4
-
-RUN mkdir -p /magics/build \
-	&& cd /magics/build \
-	&& cmake -DCMAKE_INSTALL_PREFIX=${MAGICS_INSTALL_PREFIX} -DENABLE_FORTRAN=OFF -DENABLE_CAIRO=OFF \
-		-DPYTHON_EXECUTABLE=/databricks/conda/envs/dcs-minimal/bin/python /magics/src \ 
-	&& make \
-	&& make install \
-	&& ldconfig
 
 WORKDIR /
 ADD requirements.txt .
+RUN /databricks/conda/condabin/conda install -n dcs-minimal -c conda-forge Magics
 RUN /databricks/conda/envs/dcs-minimal/bin/pip install -r requirements.txt
 RUN /databricks/conda/envs/dcs-minimal/bin/python -m cfgrib selfcheck
 RUN /databricks/conda/envs/dcs-minimal/bin/python -m Magics selfcheck 
